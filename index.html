@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Vault</title>
+
+<style>
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  font-family: Arial, sans-serif;
+  background: #2b2d31;
+  color: white;
+  overflow: hidden; /* NO SLIDING BARS */
+}
+
+/* SERVER BAR */
+#servers {
+  width: 72px;
+  background: #1e1f22;
+  display: flex;
+  justify-content: center;
+  padding-top: 12px;
+}
+
+#home {
+  width: 48px;
+  height: 48px;
+  background: #313338;
+  border-radius: 50%;
+  position: relative;
+}
+
+#home::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* SIDEBAR */
+#sidebar {
+  width: 260px;
+  padding: 15px;
+  background: #2b2d31;
+}
+
+/* MAIN */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TITLE */
+#title {
+  padding: 15px;
+  border-bottom: 1px solid #1e1f22;
+}
+
+/* CHAT – STATIC, ALWAYS VISIBLE */
+#chat {
+  padding: 15px;
+  background: #36393f;
+  height: 100%;
+}
+
+/* MESSAGE */
+.msg {
+  margin: 6px 0;
+}
+
+.me {
+  text-align: right;
+  color: #b9bbbe;
+}
+
+.other {
+  text-align: left;
+  color: white;
+}
+
+/* INPUT */
+#inputBar {
+  padding: 10px;
+  border-top: 1px solid #1e1f22;
+}
+
+#input {
+  width: 100%;
+  padding: 10px;
+  background: #40444b;
+  border: none;
+  color: white;
+}
+</style>
+</head>
+
+<body>
+
+<div id="servers">
+  <div id="home"></div>
+</div>
+
+<div id="sidebar">
+  <b>DMS</b><br><br>
+  Vived Games (Official)<br><br>
+  + Create Channel<br><br>
+  <b>Live Channels</b>
+</div>
+
+<div id="main">
+  <div id="title">
+    <b>Play Request To-</b><br>
+    <small>Names-</small>
+  </div>
+
+  <!-- MESSAGES 100% APPEAR HERE -->
+  <div id="chat"></div>
+
+  <div id="inputBar">
+    <input id="input" placeholder="Type message and press Enter">
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const chat = document.getElementById("chat");
+const input = document.getElementById("input");
+
+socket.on("message", msg => {
+  const div = document.createElement("div");
+  div.className = "msg other";
+  div.textContent = msg;
+  chat.appendChild(div);
+});
+
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && input.value.trim()) {
+    socket.emit("send", input.value);
+
+    const div = document.createElement("div");
+    div.className = "msg me";
+    div.textContent = input.value;
+    chat.appendChild(div);
+
+    input.value = "";
+  }
+});
+</script>
+
+</body>
+</html>
