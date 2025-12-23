@@ -9,14 +9,19 @@ const io = new Server(server);
 app.use(express.static(__dirname));
 
 io.on("connection", socket => {
-  console.log("CONNECTED", socket.id);
+  console.log("CONNECTED:", socket.id);
 
-  socket.on("send", msg => {
-    console.log("MSG RECEIVED:", msg);
-    io.emit("message", msg);
+  // When a client sends a message
+  socket.on("send", data => {
+    // data = { msg: "hello", senderId: socket.id }
+    // send to all clients except sender
+    socket.broadcast.emit("message", {
+      msg: data.msg,
+      senderId: data.senderId
+    });
   });
 });
 
 server.listen(3000, () => {
-  console.log("RUNNING http://localhost:3000");
+  console.log("Vault running at http://localhost:3000");
 });
