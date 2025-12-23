@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Vault Sign In</title>
+<style>
+body { display:flex; justify-content:center; align-items:center; height:100vh; background:#2b2d31; font-family:Arial; color:white; }
+form { display:flex; flex-direction:column; background:#36393f; padding:30px; border-radius:10px; }
+input { margin-bottom:15px; padding:10px; border-radius:5px; border:none; outline:none; background:#40444b; color:white; }
+button { padding:10px; border:none; border-radius:5px; background:#5865f2; color:white; cursor:pointer; }
+button:hover { background:#4752c4; }
+</style>
+</head>
+<body>
+
+<form id="signinForm">
+  <input type="text" id="username" placeholder="Enter username" required>
+  <button type="submit">Sign In</button>
+</form>
+
+<script>
+const form = document.getElementById("signinForm");
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  const username = document.getElementById("username").value.trim();
+  if(!username) return;
+
+  fetch("/signin", {
+    method:"POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({username})
+  })
+  .then(res => {
+    if(res.ok) window.location.href = "/index.html";
+    else res.text().then(t => alert(t));
+  })
+  .catch(err => console.error("Fetch error:", err));
+});
+</script>
+
+</body>
+</html>

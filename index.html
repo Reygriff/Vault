@@ -4,115 +4,34 @@
 <meta charset="UTF-8">
 <title>Vault</title>
 <style>
-body {
-  margin: 0;
-  height: 100vh;
-  display: flex;
-  font-family: Arial, sans-serif;
-  background: #2b2d31;
-  color: white;
-  overflow: hidden;
-}
+body { margin:0; height:100vh; display:flex; font-family:Arial; background:#2b2d31; color:white; overflow:hidden; }
 
 /* SERVER BAR */
-#servers {
-  width: 72px;
-  background: #1e1f22;
-  display: flex;
-  justify-content: center;
-  padding-top: 12px;
-}
-
-#home {
-  width: 48px;
-  height: 48px;
-  background: #313338;
-  border-radius: 50%;
-  position: relative;
-}
-
-#home::after {
-  content: "";
-  width: 10px;
-  height: 10px;
-  background: white;
-  border-radius: 50%;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
+#servers { width:72px; background:#1e1f22; display:flex; justify-content:flex-start; flex-direction:column; padding-top:12px; position:relative; }
+#home { width:48px; height:48px; background:#313338; border-radius:50%; margin:0 auto 20px auto; position:relative; }
+#home::after { content:""; width:10px; height:10px; background:white; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); }
+#userCircle { position:absolute; bottom:15px; left:50%; transform:translateX(-50%); background:#5865f2; color:white; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; text-align:center; padding:5px; }
 
 /* SIDEBAR */
-#sidebar {
-  width: 260px;
-  padding: 15px;
-  background: #2b2d31;
-}
+#sidebar { width:260px; padding:15px; background:#2b2d31; }
 
 /* MAIN */
-#main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
+#main { flex:1; display:flex; flex-direction:column; height:100vh; position:relative; }
 
 /* TITLE */
-#title {
-  padding: 15px;
-  border-bottom: 1px solid #1e1f22;
-}
+#title { padding:15px; border-bottom:1px solid #1e1f22; }
 
 /* CHAT AREA */
-#chat {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 15px;
-  background: #36393f;
-  overflow-y: auto;
-}
+#chat { flex:1; display:flex; flex-direction:column; padding:15px; background:#36393f; overflow-y:auto; }
 
 /* MESSAGE BOXES */
-.msg {
-  margin: 6px 0;
-  padding: 8px 12px;
-  border-radius: 8px;
-  max-width: 70%;
-  word-wrap: break-word;
-}
-
-.me {
-  background: #808080;
-  color: #fff;
-  align-self: flex-end;
-  text-align: right;
-}
-
-.other {
-  background: #ffffff;
-  color: #000;
-  align-self: flex-start;
-  text-align: left;
-}
+.msg { margin:6px 0; padding:8px 12px; border-radius:8px; max-width:70%; word-wrap:break-word; }
+.me { background:#808080; color:#fff; align-self:flex-end; text-align:right; }
+.other { background:#ffffff; color:#000; align-self:flex-start; text-align:left; }
 
 /* INPUT */
-#inputBar {
-  padding: 10px;
-  border-top: 1px solid #1e1f22;
-  flex-shrink: 0;
-}
-
-#input {
-  width: 100%;
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
-  outline: none;
-  background: #40444b;
-  color: white;
-}
+#inputBar { padding:10px; border-top:1px solid #1e1f22; flex-shrink:0; }
+#input { width:100%; padding:10px; border-radius:6px; border:none; outline:none; background:#40444b; color:white; }
 </style>
 </head>
 
@@ -120,6 +39,7 @@ body {
 
 <div id="servers">
   <div id="home"></div>
+  <div id="userCircle"></div>
 </div>
 
 <div id="sidebar">
@@ -130,13 +50,8 @@ body {
 </div>
 
 <div id="main">
-  <div id="title">
-    <b>Play Request To-</b><br>
-    <small>Names-</small>
-  </div>
-
+  <div id="title"><b>Play Request To-</b><br><small>Names-</small></div>
   <div id="chat"></div>
-
   <div id="inputBar">
     <input id="input" placeholder="Type message and press Enter">
   </div>
@@ -147,44 +62,55 @@ body {
 const socket = io();
 const chat = document.getElementById("chat");
 const input = document.getElementById("input");
+const userCircle = document.getElementById("userCircle");
 
-// unique id for this client
-const clientId = Math.random().toString(36).substr(2, 9);
+// Get username from session
+fetch("/get-username")
+  .then(res => res.json())
+  .then(data=>{
+    if(data.username) userCircle.textContent = data.username;
+    else window.location.href="/";
+  });
 
-input.focus();
+const clientId = Math.random().toString(36).substr(2,9);
 
-input.addEventListener("keydown", e => {
-  if(e.key === "Enter" && input.value.trim() !== "") {
-    const text = input.value;
-
-    // Append sender message on right
-    const div = document.createElement("div");
-    div.className = "msg me";
-    div.textContent = text;
+// Send message
+input.addEventListener("keydown", e=>{
+  if(e.key==="Enter" && input.value.trim()!==""){
+    const text=input.value;
+    const div=document.createElement("div");
+    div.className="msg me";
+    div.textContent=text;
     chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
+    chat.scrollTop=chat.scrollHeight;
 
-    // Emit message with clientId
-    socket.emit("send", { msg: text, senderId: clientId });
-
-    input.value = "";
+    socket.emit("send",{msg:text,senderId:clientId});
+    input.value="";
   }
 });
 
-// Incoming messages from other clients
-socket.on("message", data => {
-  // Only append if it is from another client
-  if(data.senderId !== clientId) {
-    const div = document.createElement("div");
-    div.className = "msg other";
-    div.textContent = data.msg;
+// Show previous messages
+socket.on("previousMessages", data=>{
+  data.forEach(m=>{
+    const div=document.createElement("div");
+    div.className=m.senderId===clientId?"msg me":"msg other";
+    div.textContent=m.msg;
     chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
+  });
+  chat.scrollTop=chat.scrollHeight;
+});
+
+// Show incoming messages
+socket.on("message", data=>{
+  if(data.senderId!==clientId){
+    const div=document.createElement("div");
+    div.className="msg other";
+    div.textContent=data.msg;
+    chat.appendChild(div);
+    chat.scrollTop=chat.scrollHeight;
   }
 });
 </script>
-
-
 
 </body>
 </html>
